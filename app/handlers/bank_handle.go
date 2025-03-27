@@ -5,6 +5,8 @@ import (
 	"main_pack/db"
 	"main_pack/services"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 type SwiftCodeResponse struct {
@@ -31,8 +33,22 @@ type CountryCodeResponse struct {
 	BankCodes   []BankDataResponse `json:"swiftCodes,omitempty"`
 }
 
+type AddSwiftCodeRequest struct {
+	Address       string `json:"address"`
+	BankName      string `json:"bankName"`
+	ISO2Code      string `json:"ISO2Code"`
+	CountryName   string `json:"countryName"`
+	IsHeadquarter bool   `json:"isHeadquarter"`
+	SwiftCode     string `json:"swiftCode"`
+}
+
+type MessageResponse struct {
+	Message string `json:"message"`
+}
+
 func GetSwiftCodeHandler(w http.ResponseWriter, r *http.Request) {
-	swiftCode := r.URL.Path[len("/v1/swift-codes/"):]
+	vars := mux.Vars(r)
+	swiftCode := vars["swiftCode"]
 
 	swiftEntry, err := services.GetSwiftCodeByCode(swiftCode)
 	if err != nil {
@@ -72,7 +88,8 @@ func GetSwiftCodeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetSwiftCodesByCountryHandler(w http.ResponseWriter, r *http.Request) {
-	countryISO2 := r.URL.Path[len("/v1/swift-codes/country/"):]
+	vars := mux.Vars(r)
+	countryISO2 := vars["countryISO2"]
 
 	swiftCodes, countryName, err := services.GetSwiftCodesByCountryCode(countryISO2)
 	if err != nil {
@@ -97,6 +114,57 @@ func GetSwiftCodesByCountryHandler(w http.ResponseWriter, r *http.Request) {
 		BankCodes:   bankCodeResponses,
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func PostSwiftCodeHandler(w http.ResponseWriter, r *http.Request) {
+	var request AddSwiftCodeRequest
+
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	var country db.Country
+	if err := db.DB.Where("iso2_code = ?", request.ISO2Code).First(&country).Error; err != nil {
+		http.Error(w, "Country not found", http.StatusNotFound)
+		return
+	}
+
+	swiftCode := db.SwiftCode{
+		Address:       request.Address,
+		BankName:      request.BankName,
+		ISO2Code:      request.ISO2Code,
+		IsHeadquarter: request.IsHeadquarter,
+		SwiftCode:     request.SwiftCode,
+	}
+
+	if err := db.DB.Create(&swiftCode).Error; err != nil {
+		http.Error(w, "Failed to create SWIFT code", http.StatusInternalServerError)
+		return
+	}
+
+	response := MessageResponse{
+		Message: "SWIFT code added successfully",
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func DeleteSwiftCodeHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	swiftCode := vars["swiftCode"]
+
+	if err := db.DB.Where("swift_code = ?", swiftCode).Delete(&db.SwiftCode{}).Error; err != nil {
+		http.Error(w, "Failed to delete SWIFT code", http.StatusInternalServerError)
+		return
+	}
+
+	response := MessageResponse{
+		Message: "SWIFT code deleted successfully",
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }

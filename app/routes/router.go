@@ -2,10 +2,20 @@ package routes
 
 import (
 	"main_pack/handlers"
-	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
-func SetupRoutes() {
-	http.HandleFunc("/v1/swift-codes/", handlers.GetSwiftCodeHandler)
-	// http.HandleFunc("/v1/swift-codes/country", handlers.GetSwiftCodesByCountryHandler)
+func SetupRoutes() *mux.Router {
+	r := mux.NewRouter()
+
+	r.HandleFunc("/v1/swift-codes/{swiftCode}", handlers.GetSwiftCodeHandler).Methods("GET")
+
+	r.HandleFunc("/v1/swift-codes/country/{countryISO2}", handlers.GetSwiftCodesByCountryHandler).Methods("GET")
+
+	r.HandleFunc("/v1/swift-codes", handlers.PostSwiftCodeHandler).Methods("POST")
+
+	r.HandleFunc("/v1/swift-codes/{swiftCode}", handlers.DeleteSwiftCodeHandler).Methods("DELETE")
+
+	return r
 }
