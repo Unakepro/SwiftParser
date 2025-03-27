@@ -25,6 +25,7 @@ type SwiftCode struct {
 
 	IsHeadquarter bool    `gorm:"not null"`
 	HeadSwiftCode *string `gorm:"size:11"`
+	Country       Country `gorm:"foreignKey:ISO2Code;references:ISO2Code"`
 }
 
 func SeedDatabase(db *gorm.DB) {
