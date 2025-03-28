@@ -3,48 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"main_pack/db"
+	"main_pack/models"
 	"main_pack/services"
 	"net/http"
 
 	"github.com/gorilla/mux"
 )
-
-type SwiftCodeResponse struct {
-	Address       string              `json:"address"`
-	BankName      string              `json:"bankName"`
-	ISO2Code      string              `json:"ISO2Code"`
-	CountryName   string              `json:"countryName"`
-	IsHeadquarter bool                `json:"isHeadquarter"`
-	SwiftCode     string              `json:"swiftCode"`
-	Branches      []SwiftCodeResponse `json:"branches,omitempty"`
-}
-
-type BankDataResponse struct {
-	Address       string `json:"address"`
-	BankName      string `json:"bankName"`
-	ISO2Code      string `json:"ISO2Code"`
-	IsHeadquarter bool   `json:"isHeadquarter"`
-	SwiftCode     string `json:"swiftCode"`
-}
-
-type CountryCodeResponse struct {
-	ISO2Code    string             `json:"ISO2Code"`
-	CountryName string             `json:"countryName"`
-	BankCodes   []BankDataResponse `json:"swiftCodes,omitempty"`
-}
-
-type AddSwiftCodeRequest struct {
-	Address       string `json:"address"`
-	BankName      string `json:"bankName"`
-	ISO2Code      string `json:"ISO2Code"`
-	CountryName   string `json:"countryName"`
-	IsHeadquarter bool   `json:"isHeadquarter"`
-	SwiftCode     string `json:"swiftCode"`
-}
-
-type MessageResponse struct {
-	Message string `json:"message"`
-}
 
 func GetSwiftCodeHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -56,28 +20,27 @@ func GetSwiftCodeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := SwiftCodeResponse{
+	response := models.SwiftCodeResponse{
 		Address:       swiftEntry.Address,
-		BankName:      swiftEntry.BankName,
-		ISO2Code:      swiftEntry.ISO2Code,
-		CountryName:   swiftEntry.Country.CountryName,
+		BankName:      swiftEntry.Name,
+		ISO2Code:      swiftEntry.Country.ISO2Code,
+		CountryName:   swiftEntry.Country.Name,
 		IsHeadquarter: swiftEntry.IsHeadquarter,
 		SwiftCode:     swiftEntry.SwiftCode,
 	}
 
 	if swiftEntry.IsHeadquarter {
-		var branches []db.SwiftCode
-		db.DB.Preload("Country").Where("bank_name = ? AND is_headquarter = ?", swiftEntry.BankName, false).Find(&branches)
+		var branches []models.SwiftCode
+		db.DB.Preload("Country").Where("name = ? AND is_headquarter = ?", swiftEntry.Name, false).Find(&branches)
 
-		var branchResponses []SwiftCodeResponse
+		var branchResponses []models.BankDataResponse
 		for _, branch := range branches {
-			branchResponses = append(branchResponses, SwiftCodeResponse{
+			branchResponses = append(branchResponses, models.BankDataResponse{
 				Address:       branch.Address,
-				BankName:      branch.BankName,
-				ISO2Code:      branch.ISO2Code,
+				BankName:      branch.Name,
+				ISO2Code:      branch.Country.ISO2Code,
 				SwiftCode:     branch.SwiftCode,
 				IsHeadquarter: branch.IsHeadquarter,
-				CountryName:   branch.Country.CountryName,
 			})
 		}
 		response.Branches = branchResponses
@@ -97,18 +60,18 @@ func GetSwiftCodesByCountryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var bankCodeResponses []BankDataResponse
+	var bankCodeResponses []models.BankDataResponse
 	for _, swiftCode := range swiftCodes {
-		bankCodeResponses = append(bankCodeResponses, BankDataResponse{
+		bankCodeResponses = append(bankCodeResponses, models.BankDataResponse{
 			Address:       swiftCode.Address,
-			BankName:      swiftCode.BankName,
-			ISO2Code:      swiftCode.ISO2Code,
+			BankName:      swiftCode.Name,
+			ISO2Code:      swiftCode.Country.ISO2Code,
 			IsHeadquarter: swiftCode.IsHeadquarter,
 			SwiftCode:     swiftCode.SwiftCode,
 		})
 	}
 
-	response := CountryCodeResponse{
+	response := models.CountryCodeResponse{
 		ISO2Code:    countryISO2,
 		CountryName: countryName,
 		BankCodes:   bankCodeResponses,
@@ -119,7 +82,7 @@ func GetSwiftCodesByCountryHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func PostSwiftCodeHandler(w http.ResponseWriter, r *http.Request) {
-	var request AddSwiftCodeRequest
+	var request models.AddSwiftCodeRequest
 
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
@@ -127,16 +90,16 @@ func PostSwiftCodeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var country db.Country
+	var country models.Country
 	if err := db.DB.Where("iso2_code = ?", request.ISO2Code).First(&country).Error; err != nil {
 		http.Error(w, "Country not found", http.StatusNotFound)
 		return
 	}
 
-	swiftCode := db.SwiftCode{
+	swiftCode := models.SwiftCode{
 		Address:       request.Address,
-		BankName:      request.BankName,
-		ISO2Code:      request.ISO2Code,
+		Name:          request.BankName,
+		CountryCode:   request.ISO2Code,
 		IsHeadquarter: request.IsHeadquarter,
 		SwiftCode:     request.SwiftCode,
 	}
@@ -146,7 +109,7 @@ func PostSwiftCodeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := MessageResponse{
+	response := models.MessageResponse{
 		Message: "SWIFT code added successfully",
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -157,14 +120,22 @@ func DeleteSwiftCodeHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	swiftCode := vars["swiftCode"]
 
-	if err := db.DB.Where("swift_code = ?", swiftCode).Delete(&db.SwiftCode{}).Error; err != nil {
+	result := db.DB.Where("swift_code = ?", swiftCode).Delete(&models.SwiftCode{})
+
+	if result.RowsAffected == 0 {
+		http.Error(w, "SWIFT code not found", http.StatusNotFound)
+		return
+	}
+
+	if result.Error != nil {
 		http.Error(w, "Failed to delete SWIFT code", http.StatusInternalServerError)
 		return
 	}
 
-	response := MessageResponse{
+	response := models.MessageResponse{
 		Message: "SWIFT code deleted successfully",
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }

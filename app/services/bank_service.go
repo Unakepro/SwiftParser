@@ -2,10 +2,11 @@ package services
 
 import (
 	"main_pack/db"
+	"main_pack/models"
 )
 
-func GetSwiftCodeByCode(code string) (*db.SwiftCode, error) {
-	var swiftCode db.SwiftCode
+func GetSwiftCodeByCode(code string) (*models.SwiftCode, error) {
+	var swiftCode models.SwiftCode
 	result := db.DB.Preload("Country").Where("swift_code = ?", code).First(&swiftCode)
 	if result.Error != nil {
 		return nil, result.Error
@@ -13,17 +14,17 @@ func GetSwiftCodeByCode(code string) (*db.SwiftCode, error) {
 	return &swiftCode, nil
 }
 
-func GetSwiftCodesByCountryCode(countryISO2 string) ([]db.SwiftCode, string, error) {
-	var swiftCodes []db.SwiftCode
-	var country db.Country
+func GetSwiftCodesByCountryCode(countryISO2 string) ([]models.SwiftCode, string, error) {
+	var swiftCodes []models.SwiftCode
+	var country models.Country
 
 	if err := db.DB.Where("iso2_code = ?", countryISO2).First(&country).Error; err != nil {
 		return nil, "", err
 	}
 
-	if err := db.DB.Where("iso2_code = ?", countryISO2).Find(&swiftCodes).Error; err != nil {
+	if err := db.DB.Where("country_code = ?", countryISO2).Find(&swiftCodes).Error; err != nil {
 		return nil, "", err
 	}
 
-	return swiftCodes, country.CountryName, nil
+	return swiftCodes, country.Name, nil
 }

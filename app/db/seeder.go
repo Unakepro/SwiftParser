@@ -6,48 +6,31 @@ import (
 	"os"
 	"strings"
 
+	"main_pack/models"
+
 	"gorm.io/gorm"
 )
 
-type Country struct {
-	ISO2Code    string `gorm:"primaryKey;size:2"`
-	CountryName string `gorm:"size:100;not null"`
-}
-
-type SwiftCode struct {
-	SwiftCode string `gorm:"primaryKey;size:11"`
-	BankName  string `gorm:"size:255;not null"`
-	ISO2Code  string `gorm:"size:2;not null;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;references:ISO2Code"`
-
-	Address  string `gorm:"type:text"`
-	TownName string `gorm:"size:100"`
-	TimeZone string `gorm:"size:50"`
-
-	IsHeadquarter bool    `gorm:"not null"`
-	HeadSwiftCode *string `gorm:"size:11"`
-	Country       Country `gorm:"foreignKey:ISO2Code;references:ISO2Code"`
-}
-
 func SeedDatabase(db *gorm.DB) {
-	db.AutoMigrate(&Country{}, &SwiftCode{})
+	db.AutoMigrate(&models.Country{}, &models.SwiftCode{})
 
-	countries, swiftRecords, err := parseCSV("data.csv")
+	countries, swift_codes, err := parseCSV("data.csv")
 	if err != nil {
 		log.Fatal("Seeding database failed:", err)
 	}
 
 	for _, country := range countries {
-		db.FirstOrCreate(&country, Country{ISO2Code: country.ISO2Code})
+		db.FirstOrCreate(&country, models.Country{ISO2Code: country.ISO2Code})
 	}
 
-	for _, record := range swiftRecords {
-		db.Create(&record)
+	for _, swift_code := range swift_codes {
+		db.Create(&swift_code)
 	}
 
 	log.Println("Database seeding completed!")
 }
 
-func parseCSV(filepath string) ([]Country, []SwiftCode, error) {
+func parseCSV(filepath string) ([]models.Country, []models.SwiftCode, error) {
 	file, err := os.Open(filepath)
 	if err != nil {
 		return nil, nil, err
@@ -60,41 +43,33 @@ func parseCSV(filepath string) ([]Country, []SwiftCode, error) {
 		return nil, nil, err
 	}
 
-	countryMap := make(map[string]string)
-	var swiftRecords []SwiftCode
+	var swift_codes []models.SwiftCode
+	var countries []models.Country
 
 	for _, row := range rows[1:] {
-		// fmt.Printf("first row %s\n", row[6])
 		iso2Code := strings.ToUpper(row[0])
-		countryMap[iso2Code] = strings.ToUpper(row[6])
+		timeZone := strings.TrimSpace(row[7])
+		countryName := strings.ToUpper(row[6])
 
-		swiftCode := row[1]
+		countries = append(countries, models.Country{
+			ISO2Code: iso2Code,
+			Name:     countryName,
+			TimeZone: timeZone,
+		})
+
+		swiftCode := strings.TrimSpace(row[1])
 		isHQ := strings.HasSuffix(swiftCode, "XXX")
-		//var headSwiftCode *string
-		// if !isHQ {
-		// 	hqCode := swiftCode[:8] + "XXX"
-		// 	headSwiftCode = &hqCode
-		// }
 
-		swiftRecord := SwiftCode{
+		swift_codes = append(swift_codes, models.SwiftCode{
 			SwiftCode:     swiftCode,
-			BankName:      row[3],
-			ISO2Code:      iso2Code,
+			Name:          row[3],
 			Address:       row[4],
-			TownName:      row[5],
-			TimeZone:      row[7],
+			Town:          row[5],
+			CountryCode:   iso2Code,
+			CodeType:      row[2],
 			IsHeadquarter: isHQ,
-			// HeadSwiftCode: headSwiftCode,
-		}
-
-		swiftRecords = append(swiftRecords, swiftRecord)
+		})
 	}
 
-	var countries []Country
-	for code, name := range countryMap {
-		countries = append(countries, Country{ISO2Code: code, CountryName: name})
-	}
-	//}
-
-	return countries, swiftRecords, nil
+	return countries, swift_codes, nil
 }
