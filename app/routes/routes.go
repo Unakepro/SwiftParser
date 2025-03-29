@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"main_pack/handlers"
+	"swiftapi/app/handlers"
 
 	"github.com/gorilla/mux"
 )

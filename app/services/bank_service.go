@@ -1,8 +1,8 @@
 package services
 
 import (
-	"main_pack/db"
-	"main_pack/models"
+	"swiftapi/app/db"
+	"swiftapi/app/models"
 )
 
 func GetSwiftCodeByCode(code string) (*models.SwiftCode, error) {

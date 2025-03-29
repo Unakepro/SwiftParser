@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"main_pack/models"
+	"swiftapi/app/models"
 
 	"gorm.io/gorm"
 )
@@ -24,7 +24,7 @@ func SeedDatabase(db *gorm.DB) {
 	}
 
 	for _, swift_code := range swift_codes {
-		db.Create(&swift_code)
+		db.FirstOrCreate(&swift_code, models.SwiftCode{SwiftCode: swift_code.SwiftCode})
 	}
 
 	log.Println("Database seeding completed!")

@@ -1,11 +1,8 @@
 package config
 
 import (
-	"log"
 	"os"
 	"sync"
-
-	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -23,9 +20,9 @@ var (
 
 func LoadConfig() *Config {
 	once.Do(func() {
-		if err := godotenv.Load(); err != nil {
-			log.Println("Warning: .env file not found, using system environment variables")
-		}
+		// if err := godotenv.Load(); err != nil {
+		// 	log.Println("Warning: .env file not found, using system environment variables")
+		// }
 
 		config = &Config{
 			DBHost:     getEnv("DB_HOST", "localhost"),

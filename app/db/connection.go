@@ -3,7 +3,7 @@ package db
 import (
 	"fmt"
 	"log"
-	"main_pack/config"
+	"swiftapi/app/config"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

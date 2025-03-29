@@ -3,9 +3,9 @@ package services_test
 import (
 	"testing"
 
-	"main_pack/db"
-	"main_pack/models"
-	"main_pack/services"
+	"swiftapi/app/db"
+	"swiftapi/app/models"
+	"swiftapi/app/services"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"

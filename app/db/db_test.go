@@ -4,8 +4,8 @@ import (
 	"log"
 	"testing"
 
-	"main_pack/db"
-	"main_pack/models"
+	"swiftapi/app/db"
+	"swiftapi/app/models"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"

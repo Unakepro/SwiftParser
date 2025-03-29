@@ -7,9 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"main_pack/db"
-	"main_pack/models"
-	"main_pack/routes"
+	"swiftapi/app/db"
+	"swiftapi/app/models"
+	"swiftapi/app/routes"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"

@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
-	"main_pack/db"
-	"main_pack/models"
-	"main_pack/services"
 	"net/http"
+	"swiftapi/app/db"
+	"swiftapi/app/models"
+	"swiftapi/app/services"
 
 	"github.com/gorilla/mux"
 )
