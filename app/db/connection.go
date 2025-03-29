@@ -40,3 +40,7 @@ func createDatabase(cfg *config.Config) {
 
 	tempDB.Exec(fmt.Sprintf("CREATE DATABASE %s", cfg.DBName))
 }
+
+func SetDatabase(database *gorm.DB) {
+	DB = database
+}
