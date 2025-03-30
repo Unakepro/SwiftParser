@@ -9,6 +9,8 @@ COPY . .
 COPY data.csv /app/data.csv  
 
 WORKDIR /app/app
+ENV CGO_ENABLED=0
+ENV GOOS=linux
 ENV GOARCH=amd64
 RUN go build -v -o /app/main .
 

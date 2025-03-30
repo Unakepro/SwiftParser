@@ -51,7 +51,7 @@ docker-compose up --build test
 ## API Endpoints
 
 ### **1️⃣ Get SWIFT Code Details**
-**GET** `/swift-code/{swiftCode}`
+**GET** `/v1/swift-codes/{swiftCode}`
 #### **Response:**
 ```json
 {
@@ -74,10 +74,10 @@ docker-compose up --build test
 ```
 
 ### **2️⃣ Get All SWIFT Codes for a Country**
-**GET** `/swift-codes/{countryISO2}`
+**GET** `/v1/swift-codes/country/{countryISO2}`
 
 ### **3️⃣ Add a New SWIFT Code**
-**POST** `/swift-code`
+**POST** `/v1/swift-codes`
 #### **Request:**
 ```json
 {
@@ -90,7 +90,7 @@ docker-compose up --build test
 ```
 
 ### **4️⃣ Delete a SWIFT Code**
-**DELETE** `/swift-code/{swiftCode}`
+**DELETE** `/v1/swift-codes/{swiftCode}`
 
 ---
 
