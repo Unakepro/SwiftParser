@@ -7,8 +7,6 @@ This project provides a RESTful API to manage **SWIFT codes** for banks. It allo
 - Add new SWIFT codes.
 - Delete existing SWIFT codes.
 
-The API is built using **Golang** with the **Gorilla Mux** router and uses **PostgreSQL** as the primary database. For testing, an **in-memory SQLite database**.
----
 
 ## Technologies Used
 - **Golang** (Gorilla Mux, GORM)
@@ -22,8 +20,8 @@ The API is built using **Golang** with the **Gorilla Mux** router and uses **Pos
 
 ### **1️⃣ Clone the Repository**
 ```sh
-git clone https://github.com/yourusername/swift-api.git
-cd swift-api
+git clone https://github.com/Unakepro/SwiftParser.git
+cd SwiftParser
 ```
 
 ### **2️⃣ Setup Environment Variables**
@@ -35,6 +33,7 @@ DB_USER=youruser
 DB_PASSWORD=yourpassword
 DB_NAME=swift_db
 ```
+Note: for docker you have to use DB_HOST=db
 
 ### **3️⃣ Start Project using Docker**
 
